@@ -39,7 +39,7 @@ This repository is intended as a practical and reproducible reference for cloud 
 ├── variables.tf          # Input variable definitions
 ├── terraform.tfvars      # Values for input variables
 ├── outputs.tf            # Exported server details
-└── README.md             # This documentation (영문 + 주요 한글 병기)
+└── README.md             # This documentation (영문 + 한글)
 ```
 
 ---
