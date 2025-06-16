@@ -13,12 +13,12 @@ This example demonstrates a production-ready, complete VPC infrastructure on NCP
                  Internet Gateway
                         │
               ┌─────────┴─────────┐
-              │   Public Subnet    │
+              │   Public Subnet   │
               │   (10.0.1.0/24)   │
               │                   │
               │  ┌─────────────┐  │
               │  │ Web Servers │  │  ← HTTP/HTTPS from Internet
-              │  │   [2 instances] │  │
+              │  │[2 instances]│  │
               │  └─────────────┘  │
               │                   │
               │  ┌─────────────┐  │
@@ -36,7 +36,7 @@ This example demonstrates a production-ready, complete VPC infrastructure on NCP
               │                   │
               │  ┌─────────────┐  │
               │  │ DB Servers  │  │  ← MySQL/SQL from Web Servers only
-              │  │   [1 instance]  │  │
+              │  │[1 instance] │  │
               │  └─────────────┘  │
               └───────────────────┘
 ```
