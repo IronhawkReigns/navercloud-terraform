@@ -75,7 +75,7 @@ Based on testing, here are the recommended configurations:
 | **Standard Small**<br/>**표준 소형** | `SPSVRSTAND000049A` | 2 | 2GB | 100GB HDD | 5-10 minutes<br/>5-10분 |
 | **Standard Medium**<br/>**표준 중형** | `SPSVRSTAND000004A` | 2 | 4GB | 100GB HDD | 5-15 minutes<br/>5-15분 |
 
-> 💡 **Tip | 팁**: Provisioning times can vary significantly depending on infrastructure load.  
+> **Tip | 팁**: Provisioning times can vary significantly depending on infrastructure load.  
 > 프로비저닝 시간은 인프라 부하에 따라 크게 달라질 수 있습니다.
 
 ### Availability Zones | 가용 영역
