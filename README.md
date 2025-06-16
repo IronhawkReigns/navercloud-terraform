@@ -3,7 +3,7 @@
 
 This project provides a clean, minimal example of how to provision multiple virtual servers on NAVER Cloud Platform (NCP) using Terraform.
 
-> 본 프로젝트는 네이버 클라우드에서 Terraform을 활용해 여러 서버와 기본 보안 그룹을 자동으로 구축하는 실용 예제입니다.
+> 본 프로젝트는 네이버 클라우드 플랫폼에서 Terraform을 활용해 여러 서버와 기본 보안 그룹을 자동으로 구축하는 실용 예제입니다.
 
 It includes:
 
@@ -93,7 +93,7 @@ terraform apply
 
 ---
 
-## What This Provisions (*생성되는 리소스 개요*)
+## What This Provisions (*생성 리소스*)
 
 - Multiple Linux VMs based on a specified count
 - A single ACG allowing inbound SSH access (port 22)
@@ -133,5 +133,5 @@ This example can be easily extended to demonstrate more advanced Terraform patte
 
 This repository was created as part of an internship project at NAVER Cloud. It reflects practical experience building infrastructure with Terraform and demonstrates an understanding of real-world provisioning flows, security structure, and IaC best practices.
 
-> 이 저장소는 NAVER Cloud 인턴십의 일환으로 개발되었으며, 단순 코드 구성에 그치지 않고 실제 인프라 배포 흐름에 대한 이해와 경험을 반영하고자 했습니다.  
+> 이 저장소는 네이버 클라우드 인턴십의 일환으로 개발되었으며, 단순 코드 구성에 그치지 않고 실제 인프라 배포 흐름에 대한 이해와 경험을 반영하고자 했습니다.  
 > 실무에 가까운 실습 예제가 필요하신 한국 개발자 분들께도 도움이 되기를 바랍니다.
