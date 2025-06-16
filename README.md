@@ -1,290 +1,137 @@
-# Naver Cloud Platform Terraform Example | 네이버 클라우드 플랫폼 Terraform 예제
+# Terraform on NAVER Cloud: Multi-Server Provisioning with Security Group  
+(*네이버 클라우드 플랫폼에서 다중 서버와 보안 그룹을 구성하는 Terraform 예제*)
 
+This project provides a clean, minimal example of how to provision multiple virtual servers on NAVER Cloud Platform (NCP) using Terraform.
 
-This example demonstrates a production-ready, complete VPC infrastructure on NCP with proper network segmentation, security groups, and multi-tier architecture. It includes VPC, subnets, security groups, NAT gateway, and bastion host configuration.
+> 본 프로젝트는 네이버 클라우드에서 Terraform을 활용해 여러 서버와 기본 보안 그룹을 자동으로 구축하는 실용 예제입니다.
 
-이 예제는 적절한 네트워크 분할, 보안 그룹, 멀티티어 아키텍처를 갖춘 NCP에서의 프로덕션 준비가 완료된 완전한 VPC 인프라입니다. VPC, 서브넷, 보안 그룹, NAT 게이트웨이, 배스천 호스트 구성이 포함됩니다.
+It includes:
 
-## Architecture Overview | 아키텍처 개요
+- A configurable number of Linux-based virtual machines (VMs)
+- Basic network security rules via Access Control Groups (ACGs)
+- Modular, readable structure suitable for both personal experiments and production bootstrapping
+
+This repository is intended as a practical and reproducible reference for cloud engineers, DevOps professionals, or platform teams evaluating infrastructure-as-code (IaC) within the NAVER Cloud ecosystem.
+
+> 이 저장소는 NAVER Cloud 환경에서 IaC(Infrastructure as Code)를 테스트하거나 적용하려는 엔지니어와 팀을 위한 **간결하고 재사용 가능한 템플릿** 역할을 합니다.  
+> 한국 개발자 분들이 참고하시기에도 좋도록 작성되었습니다.
+
+---
+
+## Key Features (*주요 기능*)
+
+- Multi-server provisioning via `count`  
+  → `count`를 사용해 원하는 만큼 서버를 동시에 구성할 수 있습니다.
+- Public IP output for each instance
+- Basic SSH access control (port 22) using NCP's ACG  
+  → 보안 그룹을 통한 SSH 접근 허용 예시 포함
+- Modular structure separating variables, outputs, and tfvars  
+  → 변수, 출력, 입력값(tfvars)을 분리해 관리가 쉽도록 설계
+- Designed with reusability and clarity in mind
+
+---
+
+## File Structure (*파일 구조*)
 
 ```
-                    Internet
-                        │
-                 Internet Gateway
-                        │
-              ┌─────────┴─────────┐
-              │   Public Subnet   │
-              │   (10.0.1.0/24)   │
-              │                   │
-              │  ┌─────────────┐  │
-              │  │ Web Servers │  │  ← HTTP/HTTPS from Internet
-              │  │[2 instances]│  │
-              │  └─────────────┘  │
-              │                   │
-              │  ┌─────────────┐  │
-              │  │ Bastion Host│  │  ← SSH/RDP from Admin IPs
-              │  └─────────────┘  │
-              │                   │
-              │  ┌─────────────┐  │
-              │  │ NAT Gateway │  │  ← Outbound Internet for Private
-              │  └─────────────┘  │
-              └─────────┬─────────┘
-                        │
-              ┌─────────┴─────────┐
-              │  Private Subnet   │
-              │   (10.0.2.0/24)   │
-              │                   │
-              │  ┌─────────────┐  │
-              │  │ DB Servers  │  │  ← MySQL/SQL from Web Servers only
-              │  │[1 instance] │  │
-              │  └─────────────┘  │
-              └───────────────────┘
+.
+├── main.tf               # Main Terraform logic
+├── variables.tf          # Input variable definitions
+├── terraform.tfvars      # Values for input variables
+├── outputs.tf            # Exported server details
+└── README.md             # This documentation (영문 + 주요 한글 병기)
 ```
 
-## What This Example Creates | 이 예제가 생성하는 것
+---
 
-### Network Infrastructure | 네트워크 인프라
-- **VPC** with custom CIDR block | 사용자 정의 CIDR 블록이 있는 VPC
-- **Internet Gateway** for public internet access | 공용 인터넷 접근을 위한 인터넷 게이트웨이
-- **NAT Gateway** for private subnet internet access | 프라이빗 서브넷 인터넷 접근을 위한 NAT 게이트웨이
-- **Public Subnet** for web servers and bastion | 웹 서버와 배스천용 퍼블릭 서브넷
-- **Private Subnet** for database servers | 데이터베이스 서버용 프라이빗 서브넷
-- **Route Tables** with proper routing configuration | 적절한 라우팅 구성이 있는 라우팅 테이블
+## Requirements (*요구 사항*)
 
-### Security Infrastructure | 보안 인프라
-- **3 Security Groups** with layered security | 계층화된 보안이 있는 3개의 보안 그룹
-- **Bastion Host** for secure access to private resources | 프라이빗 리소스에 대한 보안 접근을 위한 배스천 호스트
-- **Network ACLs** and security group rules | 네트워크 ACL 및 보안 그룹 규칙
+- [Terraform](https://developer.hashicorp.com/terraform/downloads) 1.5+
+- NAVER Cloud Platform account (https://www.ncloud.com/)
+- NCP Access Key & Secret Key
 
-### Server Infrastructure | 서버 인프라
-- **Web Servers** (configurable count) in public subnet | 퍼블릭 서브넷의 웹 서버 (구성 가능한 개수)
-- **Database Servers** (configurable count) in private subnet | 프라이빗 서브넷의 데이터베이스 서버 (구성 가능한 개수)
-- **Bastion Host** for administrative access | 관리 접근을 위한 배스천 호스트
-- **Public IPs** for internet-facing resources | 인터넷 연결 리소스용 퍼블릭 IP
+---
 
-## Security Configuration | 보안 구성
+## Usage (*사용 방법*)
 
-### Security Groups | 보안 그룹
-
-#### Web Servers Security Group | 웹 서버 보안 그룹
-- **HTTP (80)**: Open to internet (0.0.0.0/0) | 인터넷에 개방
-- **HTTPS (443)**: Open to internet (0.0.0.0/0) | 인터넷에 개방
-- **RDP (3389)**: From admin IPs and bastion host | 관리자 IP 및 배스천 호스트에서
-
-#### Database Servers Security Group | 데이터베이스 서버 보안 그룹
-- **MySQL (3306)**: Only from web servers security group | 웹 서버 보안 그룹에서만
-- **SQL Server (1433)**: Only from web servers security group | 웹 서버 보안 그룹에서만
-- **RDP (3389)**: Only from bastion host | 배스천 호스트에서만
-
-#### Bastion Host Security Group | 배스천 호스트 보안 그룹
-- **RDP (3389)**: From admin IPs only | 관리자 IP에서만
-- **SSH (22)**: From admin IPs only | 관리자 IP에서만
-
-## Quick Start | 빠른 시작
-
-### 1. Configure your environment | 환경 구성
+1. Clone the repository:
 
 ```bash
-# Copy the example configuration | 예제 구성 복사
-cp terraform.tfvars.example terraform.tfvars
-
-# Edit the configuration | 구성 편집
-nano terraform.tfvars
+git clone https://github.com/your-username/ncp-terraform-example.git
+cd ncp-terraform-example
 ```
 
-**Critical Security Configuration | 중요한 보안 구성:**
+2. Configure your credentials and settings:
+
 ```hcl
-# MUST CHANGE: Set to your office/home IP range
-# 반드시 변경: 사무실/집 IP 범위로 설정
-admin_access_cidr = "YOUR.IP.ADDRESS.0/24"  # NOT 0.0.0.0/0!
+# terraform.tfvars
+ncloud_access_key = "YOUR_ACCESS_KEY"
+ncloud_secret_key = "YOUR_SECRET_KEY"
+region            = "KR"
+server_count      = 2
 ```
 
-### 2. Deploy the infrastructure | 인프라 배포
+> 위와 같이 입력 후, 원하는 서버 수량(server_count)과 지역(region)을 설정하세요.
+
+3. Initialize Terraform:
 
 ```bash
-# Initialize Terraform | Terraform 초기화
 terraform init
+```
 
-# Review the plan | 계획 검토
+4. Preview the execution plan:
+
+```bash
 terraform plan
+```
 
-# Deploy the infrastructure | 인프라 배포
+5. Apply the configuration:
+
+```bash
 terraform apply
 ```
 
-### 3. Access your infrastructure | 인프라 접근
+---
 
-```bash
-# View complete infrastructure summary | 완전한 인프라 요약 보기
-terraform output infrastructure_summary
+## What This Provisions (*생성되는 리소스 개요*)
 
-# Get connection guide | 연결 가이드 확인
-terraform output connection_guide
+- Multiple Linux VMs based on a specified count
+- A single ACG allowing inbound SSH access (port 22)
+- Public IP addresses for each instance
+- Server details output to the terminal after apply
 
-# View network architecture | 네트워크 아키텍처 보기
-terraform output network_architecture_diagram
-```
+---
 
-## Access Patterns | 접근 패턴
+## Security Considerations (*보안 관련 주의 사항*)
 
-### Web Server Access | 웹 서버 접근
-```bash
-# Direct HTTP/HTTPS access | 직접 HTTP/HTTPS 접근
-curl http://[WEB_SERVER_PUBLIC_IP]
-curl https://[WEB_SERVER_PUBLIC_IP]
+This example allows SSH access from all IP addresses for demonstration purposes. In real-world scenarios, consider the following:
 
-# Admin RDP access (from allowed IP) | 관리자 RDP 접근 (허용된 IP에서)
-mstsc /v:[WEB_SERVER_PUBLIC_IP]:3389
-```
+- Restrict SSH access to a specific CIDR block
+- Use key pair authentication for all access
+- Limit exposure by applying private subnets, NAT gateways, or jump hosts
 
-### Database Access via Bastion | 배스천을 통한 데이터베이스 접근
-```bash
-# Step 1: Connect to bastion host | 1단계: 배스천 호스트 연결
-mstsc /v:[BASTION_PUBLIC_IP]:3389
+> 본 예제는 기본적으로 SSH 접근을 허용하고 있으므로, 실제 운영 환경에서는 CIDR 제한, 키 기반 인증, NAT 또는 점프 서버 활용을 권장합니다.
 
-# Step 2: From bastion, connect to database | 2단계: 배스천에서 데이터베이스 연결
-mstsc /v:[DB_SERVER_PRIVATE_IP]:3389
+---
 
-# Or database connection from web server | 또는 웹 서버에서 데이터베이스 연결
-mysql -h [DB_SERVER_PRIVATE_IP] -P 3306 -u username -p
-```
+## Potential Extensions (*확장 가능 예시*)
 
-## Environment Configurations | 환경 구성
+This example can be easily extended to demonstrate more advanced Terraform patterns, such as:
 
-### Development Environment | 개발 환경
-```hcl
-web_server_count = 1
-db_server_count = 1
-web_server_product_code = "SPSVRSTAND000049A"  # 2vCPU, 2GB
-db_server_product_code = "SPSVRSTAND000004A"   # 2vCPU, 4GB
-create_bastion = false
-```
-**Cost | 비용**: ~$80-90/month | 월 약 $80-90
+- Load balancer configuration (NLB)
+- Auto-scaling groups
+- Cloud-init or userdata scripting
+- Modular separation (`modules/server`, `modules/network`)
+- Multiple ACGs or tiered access control
 
-### Staging Environment | 스테이징 환경
-```hcl
-web_server_count = 2
-db_server_count = 1
-web_server_product_code = "SPSVRSTAND000004A"  # 2vCPU, 4GB
-db_server_product_code = "SPSVRSTAND000005A"   # 4vCPU, 8GB
-create_bastion = true
-```
-**Cost | 비용**: ~$140-160/month | 월 약 $140-160
+> 단순한 실습에서 시작해, 모듈화, 오토스케일링, 보안 설계 등 더 복잡한 인프라 구현으로 발전시킬 수 있습니다.  
+> Terraform 학습용으로도, 팀 단위 테스트/배포 자동화 기반으로도 확장 가능합니다.
 
-### Production Environment | 프로덕션 환경
-```hcl
-web_server_count = 3
-db_server_count = 2
-web_server_product_code = "SPSVRSTAND000005A"  # 4vCPU, 8GB
-db_server_product_code = "SPSVRSTAND000006A"   # 8vCPU, 16GB
-create_bastion = true
-enable_monitoring = true
-enable_protection = true
-```
-**Cost | 비용**: ~$280-320/month | 월 약 $280-320
+---
 
-## Troubleshooting | 문제 해결
+## Author’s Note (*작성자 메모*)
 
-### Common Issues | 일반적인 문제
+This repository was created as part of an internship project at NAVER Cloud. It reflects practical experience building infrastructure with Terraform and demonstrates an understanding of real-world provisioning flows, security structure, and IaC best practices.
 
-**1. VPC Creation Fails | VPC 생성 실패**
-```
-Error: VPC creation failed
-```
-**Solution | 해결책**: Ensure CIDR blocks don't overlap and are valid  
-CIDR 블록이 겹치지 않고 유효한지 확인
-
-**2. NAT Gateway Timeout | NAT 게이트웨이 타임아웃**
-**Issue | 문제**: NAT Gateway creation takes longer than expected  
-NAT 게이트웨이 생성이 예상보다 오래 걸림  
-**Solution | 해결책**: This is normal for NAT Gateway creation (5-10 minutes)  
-NAT 게이트웨이 생성에는 정상적으로 5-10분 소요
-
-**3. Security Group Rule Conflicts | 보안 그룹 규칙 충돌**
-**Issue | 문제**: Rules may conflict during creation  
-생성 중 규칙이 충돌할 수 있음  
-**Solution | 해결책**: Apply in stages using `-target` flag  
-`-target` 플래그를 사용하여 단계별로 적용
-
-**4. Server Placement Errors | 서버 배치 오류**
-**Issue | 문제**: Servers fail to launch in specific subnets  
-특정 서브넷에서 서버 시작 실패  
-**Solution | 해결책**: Check subnet availability and zone configuration  
-서브넷 가용성 및 영역 구성 확인
-
-## Security Best Practices | 보안 모범 사례
-
-### Implemented Features | 구현된 기능
-- Network segmentation with public/private subnets | 퍼블릭/프라이빗 서브넷으로 네트워크 분할
-- Bastion host for secure access to private resources | 프라이빗 리소스에 대한 보안 접근을 위한 배스천 호스트
-- Database isolation in private subnet | 프라이빗 서브넷에서 데이터베이스 격리
-- Layered security groups with least privilege | 최소 권한 원칙의 계층화된 보안 그룹
-- NAT Gateway for controlled outbound access | 제어된 아웃바운드 접근을 위한 NAT 게이트웨이
-
-### Recommended Improvements | 권장 개선사항
-- Set specific IP ranges for admin access | 관리자 접근에 특정 IP 범위 설정
-- Implement SSL certificates for HTTPS | HTTPS용 SSL 인증서 구현
-- Add monitoring and logging | 모니터링 및 로깅 추가
-- Configure automated backups | 자동 백업 구성
-- Implement intrusion detection | 침입 탐지 구현
-
-## Scaling and Modifications | 확장 및 수정
-
-### Adding More Servers | 서버 추가
-```hcl
-# Scale web tier | 웹 티어 확장
-web_server_count = 4  # Increase from 2 to 4
-
-# Add database replicas | 데이터베이스 복제본 추가
-db_server_count = 3   # Increase from 1 to 3
-```
-
-### Network Expansion | 네트워크 확장
-```hcl
-# Add additional subnets (requires code modification)
-# 추가 서브넷 추가 (코드 수정 필요)
-# Example: Add staging subnet (10.0.3.0/24)
-```
-
-## Cost Optimization | 비용 최적화
-
-### Development Tips | 개발 팁
-- Use smaller server instances | 더 작은 서버 인스턴스 사용
-- Disable bastion host when not needed | 필요하지 않을 때 배스천 호스트 비활성화
-- Use single database server | 단일 데이터베이스 서버 사용
-
-### Production Considerations | 프로덕션 고려사항
-- Monitor NAT Gateway data transfer costs | NAT 게이트웨이 데이터 전송 비용 모니터링
-- Review public IP usage regularly | 퍼블릭 IP 사용량 정기 검토
-- Consider reserved instances for long-term use | 장기 사용 시 예약 인스턴스 고려
-
-## Cleanup | 정리
-
-To destroy all infrastructure:  
-모든 인프라를 삭제하려면:
-
-```bash
-terraform destroy
-```
-
-**Warning | 경고**: This will destroy all VPC resources including servers, networking, and data.  
-이는 서버, 네트워킹, 데이터를 포함한 모든 VPC 리소스를 삭제합니다.
-
-## Next Steps | 다음 단계
-
-1. **Application Deployment | 애플리케이션 배포**
-   - Configure web servers with your application | 애플리케이션으로 웹 서버 구성
-   - Set up database with proper schemas | 적절한 스키마로 데이터베이스 설정
-
-2. **Load Balancing | 로드 밸런싱**
-   - Add NCP Load Balancer for web servers | 웹 서버용 NCP 로드 밸런서 추가
-   - Configure health checks | 헬스 체크 구성
-
-3. **Monitoring and Backup | 모니터링 및 백업**
-   - Implement monitoring solutions | 모니터링 솔루션 구현
-   - Set up automated backup procedures | 자동 백업 절차 설정
-
-## Related Examples | 관련 예제
-
-- [Basic Server](../01-basic-server/) - Simple single server setup | 간단한 단일 서버 설정
-- [Multi-Server Security](../02-multi-server-security/) - Multi-server without VPC | VPC 없는 멀티 서버
+> 이 저장소는 NAVER Cloud 인턴십의 일환으로 개발되었으며, 단순 코드 구성에 그치지 않고 실제 인프라 배포 흐름에 대한 이해와 경험을 반영하고자 했습니다.  
+> 실무에 가까운 실습 예제가 필요하신 한국 개발자 분들께도 도움이 되기를 바랍니다.
