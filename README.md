@@ -1,146 +1,236 @@
-# Basic NCP Server Example | 기본 NCP 서버 예제
+# NCP Terraform Server Example | 네이버 클라우드 Terraform 예제
 
-This example demonstrates creating a basic Windows Server 2016 instance on Naver Cloud Platform using Terraform. The configurations provided have been tested and verified to work reliably.
+This example demonstrates creating a multi-tier server architecture on NCP with proper security group configuration. It creates separate web and database tiers with appropriate network security rules.
 
-이 예제는 Terraform을 사용하여 Naver Cloud Platform에서 기본 Windows Server 2016 인스턴스를 생성하는 방법을 보여줍니다. 제공된 구성은 테스트되고 안정적으로 작동하는 것이 확인되었습니다.
+이 예제는 적절한 보안 그룹 구성으로 NCP에서 멀티티어 서버 아키텍처를 생성하는 방법을 보여줍니다. 적절한 네트워크 보안 규칙을 가진 별도의 웹 및 데이터베이스 티어를 생성합니다.
+
+## Architecture | 아키텍처
+
+```
+Internet
+    ↓
+[Web Servers] ← HTTP(80), HTTPS(443)
+    ↓ MySQL(3306)
+[DB Servers] ← Only from Web Servers
+    ↑
+Admin Access (RDP 3389) ← Your IP only
+```
 
 ## What This Example Creates | 이 예제가 생성하는 것
 
-- **Windows Server 2016** instance with customizable specifications | 사용자 정의 가능한 사양의 Windows Server 2016 인스턴스
-- **Login Key** (SSH key pair) for server access | 서버 접근을 위한 로그인 키 (SSH 키 페어)
-- **Resource outputs** with connection information and server details | 연결 정보 및 서버 세부 정보가 포함된 리소스 출력
+- **Multiple Web Servers** (configurable count) | 다수의 웹 서버 (구성 가능한 개수)
+- **Multiple Database Servers** (configurable count) | 다수의 데이터베이스 서버 (구성 가능한 개수)
+- **Security Groups** with tiered access control | 계층화된 접근 제어를 가진 보안 그룹
+- **Shared Login Key** for all servers | 모든 서버용 공유 로그인 키
+- **Comprehensive Outputs** with detailed infrastructure information | 상세한 인프라 정보가 포함된 포괄적인 출력
 
-## Prerequisites | 필수 요구사항
+## Security Configuration | 보안 구성
 
-1. **NCP Account** with appropriate permissions | 권한이 주어진 NCP 계정
-2. **Terraform** installed (version >= 1.0) | Terraform 설치 (버전 >= 1.0)
-3. **NCP API credentials** configured | NCP API 자격 증명 구성
+### Web Tier Security Group | 웹 티어 보안 그룹
+- **HTTP (80)**: Open to internet | 인터넷에 개방
+- **HTTPS (443)**: Open to internet | 인터넷에 개방  
+- **RDP (3389)**: Restricted to admin IPs | 관리자 IP로 제한
+
+### Database Tier Security Group | 데이터베이스 티어 보안 그룹
+- **MySQL (3306)**: Only from web servers | 웹 서버에서만 접근 가능
+- **RDP (3389)**: Restricted to admin IPs | 관리자 IP로 제한
 
 ## Quick Start | 빠른 시작
 
-### 1. Set up your credentials | 자격 설정
+### 1. Configure your setup | 설정 구성
 
 ```bash
-# Set environment variables (recommended) | 환경 변수 설정 (권장)
-export NCLOUD_ACCESS_KEY="your-access-key"
-export NCLOUD_SECRET_KEY="your-secret-key"
-```
-
-### 2. Configure your variables | 변수 구성
-
-```bash
-# Copy the example variables file | 예제 변수 파일 복사
+# Copy the example file | 예제 파일 복사
 cp terraform.tfvars.example terraform.tfvars
 
-# Edit with your preferences | 설정 편집
+# Edit for your needs | 필요에 맞게 편집
 nano terraform.tfvars
 ```
 
-### 3. Deploy the infrastructure | 인프라 배포
+**Important Security Setting | 중요한 보안 설정:**
+```hcl
+# CHANGE THIS to your office/home IP for better security
+# 보안을 위해 사무실/집 IP로 변경하세요
+admin_access_cidr = "YOUR.IP.ADDRESS.0/24"  
+```
+
+### 2. Deploy the infrastructure | 인프라 배포
 
 ```bash
-# Initialize Terraform | Terraform 초기화
 terraform init
-
-# Review the execution plan | 실행 계획 검토
 terraform plan
-
-# Apply the configuration | 구성 적용
 terraform apply
 ```
 
-### 4. Connect to your server | 서버 연결
-
-After deployment, use the output information to connect:
-배포 후 출력 정보를 사용하여 연결:
+### 3. View your infrastructure | 인프라 확인
 
 ```bash
-# View connection information | 연결 정보 확인
+# See all server information | 모든 서버 정보 확인
+terraform output infrastructure_summary
+
+# View network architecture | 네트워크 아키텍처 확인
+terraform output network_architecture
+
+# Get connection details | 연결 세부 정보 확인
 terraform output connection_info
-
-# For Windows servers, use RDP with the public IP
-# Windows 서버의 경우 공용 IP로 RDP 사용
-# Default RDP port: 3389 | 기본 RDP 포트: 3389
 ```
 
-## Configuration Options | 구성 옵션
+## Configuration Examples | 구성 예제
 
-### Server Specifications | 서버 사양
-
-Based on testing, here are the recommended configurations:
-테스트를 기반으로 한 권장 구성:
-
-| Server Type<br/>서버 유형 | Code<br/>코드 | vCPU | RAM | Storage<br/>스토리지 | Provisioning Time<br/>프로비저닝 시간 |
-|-------------|------|------|-----|---------|-------------------|
-| **Standard Small**<br/>**표준 소형** | `SPSVRSTAND000049A` | 2 | 2GB | 100GB HDD | 5-10 minutes<br/>5-10분 |
-| **Standard Medium**<br/>**표준 중형** | `SPSVRSTAND000004A` | 2 | 4GB | 100GB HDD | 5-15 minutes<br/>5-15분 |
-
-> **Tip**: Provisioning times can vary significantly depending on infrastructure load.  
-> 프로비저닝 시간은 인프라 부하에 따라 크게 달라질 수 있습니다.
-
-### Availability Zones | 가용 영역
-
-- **KR-1**: Only available zone in NCP (despite what some documentation might suggest about KR-2)  
-- **KR-1**: NCP에서 사용 가능한 유일한 영역 (일부 문서에서 KR-2를 언급하더라도)
-
-## Troubleshooting | 문제 해결
-
-### Common Issues | 일반적인 문제
-
-**1. Server name length error | 서버 이름 길이 오류**
+### Development Environment | 개발 환경
+```hcl
+web_server_count = 1
+db_server_count = 1
+web_server_product_code = "SPSVRSTAND000049A"  # 2vCPU, 2GB
+db_server_product_code = "SPSVRSTAND000004A"   # 2vCPU, 4GB
 ```
-Error: "Please check your input value : [server-name]. Length constraints: Minimum length of 3. Maximum length of 15."
+**Cost | 비용**: ~$70-80/month | 월 약 $70-80
+
+### Production Environment | 프로덕션 환경
+```hcl
+web_server_count = 3
+db_server_count = 2
+web_server_product_code = "SPSVRSTAND000005A"  # 4vCPU, 8GB
+db_server_product_code = "SPSVRSTAND000006A"   # 8vCPU, 16GB
+enable_monitoring = true
+enable_protection = true
 ```
-**Solution**: Ensure server name is 3-15 characters long.  
-서버 이름이 3-15자인지 확인하세요.
+**Cost | 비용**: ~$195-215/month | 월 약 $195-215
 
-**2. Provisioning timeout (15+ minutes) | 프로비저닝 타임아웃 (15분 이상)**  
-**Common issue**: Extended provisioning times occasionally occur  
-긴 프로비저닝 시간이 가끔 발생합니다  
-**Solution**: 
-- Stop the process with `Ctrl+C` | `Ctrl+C`로 프로세스 중지
-- Run `terraform destroy` to clean up | `terraform destroy`로 정리
-- Retry the deployment - success often varies between attempts | 재배포 시도 - 시도마다 성공률이 다름
-- This appears to be infrastructure-related rather than configuration issues | 구성 문제가 아닌 인프라 관련 문제로 보임
+## Security Best Practices | 보안 모범 사례
 
-**3. Compatible server product code error | 호환 서버 제품 코드 오류**
+### Implemented | 구현됨
+- Separate security groups for different tiers | 다른 티어를 위한 별도 보안 그룹
+- Database access restricted to web tier only | 웹 티어에만 데이터베이스 접근 제한
+- Admin access controllable by IP | IP로 제어 가능한 관리자 접근
+
+### 🔧 Recommended Improvements | 권장 개선사항
+- Use specific IP ranges instead of 0.0.0.0/0 for admin access | 관리자 접근에 0.0.0.0/0 대신 특정 IP 범위 사용
+- Consider implementing a bastion host | 배스천 호스트 구현 고려
+- Enable monitoring for production workloads | 프로덕션 워크로드에 모니터링 활성화
+
+## Common Issues | 일반적인 문제
+
+### 1. Server Name Too Long | 서버 이름이 너무 김
+**Error**: Server name exceeds 15 characters
+**Solution**: Keep `project_name` to 10 characters or less
+`project_name`을 10자 이하로 유지
+
+### 2. Security Group Rule Conflicts | 보안 그룹 규칙 충돌
+**Issue**: Rules may conflict during creation
+**Solution**: Apply in stages or recreate if needed
+단계별로 적용하거나 필요시 재생성
+
+### 3. Multiple Server Provisioning | 다중 서버 프로비저닝
+**Issue**: Some servers may fail while others succeed
+**Solution**: Check outputs to see which servers were created successfully
+어떤 서버가 성공적으로 생성되었는지 출력을 확인
+
+## Example Output | 출력 예제
+
+After deployment, you'll see detailed information like:
+배포 후 다음과 같은 상세 정보를 볼 수 있습니다:
+
+```hcl
+infrastructure_summary = {
+  "total_servers" = 3
+  "web_servers" = 2
+  "db_servers" = 1
+  "security_groups" = 2
+  "cost_estimate" = {
+    "monthly_web_servers" = "~$70/month (estimated)"
+    "monthly_db_servers" = "~$45/month (estimated)"
+    "total_estimated" = "~$115/month"
+  }
+}
+
+network_architecture = {
+  "web_tier" = {
+    "servers" = ["webapp-web-1", "webapp-web-2"]
+    "allowed_ports" = ["80 (HTTP)", "443 (HTTPS)", "3389 (RDP from admin)"]
+    "security_group" = "webapp-web-sg"
+  }
+  "db_tier" = {
+    "servers" = ["webapp-db-1"]
+    "allowed_ports" = ["3306 (MySQL from web tier)", "3389 (RDP from admin)"]
+    "security_group" = "webapp-db-sg"
+  }
+}
 ```
-Error: "Cannot find matched product code [PRODUCT_CODE] matching server image [IMAGE_CODE]"
+
+## Testing Your Setup | 설정 테스트
+
+### 1. Test Web Server Access | 웹 서버 접근 테스트
+```bash
+# Test HTTP access to web servers | 웹 서버 HTTP 접근 테스트
+curl http://[WEB_SERVER_PUBLIC_IP]
+
+# RDP to web servers (from allowed IP) | 웹 서버 RDP 접근 (허용된 IP에서)
+mstsc /v:[WEB_SERVER_PUBLIC_IP]:3389
 ```
-**Issue**: Not all server product codes are compatible with all image types  
-모든 서버 제품 코드가 모든 이미지 유형과 호환되는 것은 아닙니다  
-**Solution**: Use the verified combinations provided in `terraform.tfvars.example`  
-`terraform.tfvars.example`에 제공된 검증된 조합을 사용하세요
 
-### Key Observations | 주요 관찰사항
+### 2. Test Database Connectivity | 데이터베이스 연결 테스트
+```bash
+# From web server, test MySQL connection | 웹 서버에서 MySQL 연결 테스트
+mysql -h [DB_SERVER_PRIVATE_IP] -u username -p
 
-1. **Provisioning variability** - Identical configurations may take 3-15+ minutes depending on infrastructure load  
-   **프로비저닝 변동성** - 동일한 구성도 인프라 부하에 따라 3-15분+ 소요될 수 있음
-2. **Limited OS options** - Windows images are readily available; Linux availability may vary by region/account  
-   **제한된 OS 옵션** - Windows 이미지는 쉽게 사용 가능; Linux 가용성은 지역/계정에 따라 다를 수 있음
-3. **Strict naming requirements** - Server names must be exactly 3-15 characters  
-   **엄격한 명명 요구사항** - 서버 이름은 정확히 3-15자여야 함
-4. **Product compatibility** - Specific server product codes work with specific image types  
-   **제품 호환성** - 특정 서버 제품 코드는 특정 이미지 유형과만 작동
+# Direct access should be blocked from internet | 인터넷에서 직접 접근은 차단되어야 함
+```
+
+## Scaling and Modifications | 확장 및 수정
+
+### Adding More Servers | 서버 추가
+```hcl
+# Add more web servers | 웹 서버 추가
+web_server_count = 3  # Increase from 2 to 3
+
+# Add more database servers | 데이터베이스 서버 추가
+db_server_count = 2   # Increase from 1 to 2
+```
+
+### Upgrading Server Specifications | 서버 사양 업그레이드
+```hcl
+# Upgrade web servers | 웹 서버 업그레이드
+web_server_product_code = "SPSVRSTAND000005A"  # 4vCPU, 8GB
+
+# Upgrade database servers | 데이터베이스 서버 업그레이드
+db_server_product_code = "SPSVRSTAND000006A"   # 8vCPU, 16GB
+```
 
 ## Cleanup | 정리
 
-To destroy the resources | 리소스 삭제:
+To destroy all resources:
+모든 리소스를 삭제하려면:
 
 ```bash
 terraform destroy
 ```
 
-## Cost Considerations | 비용 고려사항
+**Note | 참고**: This will destroy all servers and security groups created by this configuration.
+이 구성으로 생성된 모든 서버와 보안 그룹이 삭제됩니다.
 
-Estimated monthly costs for standard server configurations:  
-표준 서버 구성의 예상 월 비용:
-- **Standard servers | 표준 서버**: Approximately $25-40/month depending on specifications  
-  사양에 따라 월 약 $25-40
-- **Remember to destroy** test resources to avoid unnecessary charges  
-  **테스트 리소스 삭제**를 잊지 마세요 (불필요한 요금 방지)
+## Next Steps | 다음 단계
+
+1. **Configure Applications | 애플리케이션 구성**
+   - Install web server software (IIS, Apache, etc.) | 웹 서버 소프트웨어 설치
+   - Set up database software (MySQL, SQL Server, etc.) | 데이터베이스 소프트웨어 설정
+
+2. **Implement Load Balancing | 로드 밸런싱 구현**
+   - Configure NCP Load Balancer | NCP 로드 밸런서 구성
+   - Set up health checks | 헬스 체크 설정
+
+3. **Enhance Security | 보안 강화**
+   - Implement SSL certificates | SSL 인증서 구현
+   - Set up VPN access | VPN 접근 설정
+   - Configure monitoring and alerting | 모니터링 및 알림 구성
+
+## Related Examples | 관련 예제
+
+- [Basic Server](../01-basic-server/) - Start here if you're new to NCP Terraform | NCP Terraform이 처음이라면 여기서 시작
+- [Complete Infrastructure](../04-complete-infrastructure/) - Full production setup | 완전한 프로덕션 설정
 
 ---
 
-*These configurations have been tested and verified to work reliably with NCP's Terraform provider.*  
-*이 구성들은 NCP의 Terraform 프로바이더와 안정적으로 작동하는 것을 테스트하였습니다.*
+*This configuration has been tested with multiple server deployments and provides a solid foundation for multi-tier applications on NCP.*
+
+*이 구성은 다중 서버 배포로 테스트되었으며 NCP에서 멀티티어 애플리케이션을 위한 견고한 기반을 제공합니다.*
