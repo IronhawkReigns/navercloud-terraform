@@ -13,7 +13,7 @@ It includes:
 
 This repository is intended as a practical and reproducible reference for cloud engineers, DevOps professionals, or platform teams evaluating infrastructure-as-code (IaC) within the NAVER Cloud ecosystem.
 
-> 이 저장소는 NAVER Cloud 환경에서 IaC(Infrastructure as Code)를 테스트하거나 적용하려는 엔지니어와 팀을 위한 **간결하고 재사용 가능한 템플릿** 역할을 합니다.  
+> 이 repository는 NAVER Cloud 환경에서 IaC(Infrastructure as Code)를 테스트하거나 적용하려는 엔지니어와 팀을 위한 **간결하고 재사용 가능한 템플릿** 역할을 합니다.  
 > 한국 개발자 분들이 참고하시기에도 좋도록 작성되었습니다.
 
 ---
