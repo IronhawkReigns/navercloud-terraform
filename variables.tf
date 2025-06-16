@@ -1,5 +1,5 @@
-# Input Variables for Multi-Server with Security Groups
-# Extended configuration for production-like environments
+# Input Variables for Complete VPC Infrastructure
+# Comprehensive configuration for production-ready VPC environment
 
 # General Configuration
 variable "region" {
@@ -15,14 +15,54 @@ variable "environment" {
 }
 
 variable "project_name" {
-  description = "Name of the project for resource naming and tagging"
+  description = "Name of the project for resource naming"
   type        = string
-  default     = "ncp-multi-server"
+  default     = "myapp"
   
   validation {
-    condition     = length(var.project_name) <= 10
-    error_message = "Project name must be 10 characters or less for server naming."
+    condition     = length(var.project_name) <= 8
+    error_message = "Project name must be 8 characters or less for server naming."
   }
+}
+
+# Network Configuration
+variable "vpc_cidr" {
+  description = "CIDR block for the VPC"
+  type        = string
+  default     = "10.0.0.0/16"
+  
+  validation {
+    condition     = can(cidrhost(var.vpc_cidr, 0))
+    error_message = "VPC CIDR must be a valid CIDR block."
+  }
+}
+
+variable "public_subnet_cidr" {
+  description = "CIDR block for the public subnet"
+  type        = string
+  default     = "10.0.1.0/24"
+  
+  validation {
+    condition     = can(cidrhost(var.public_subnet_cidr, 0))
+    error_message = "Public subnet CIDR must be a valid CIDR block."
+  }
+}
+
+variable "private_subnet_cidr" {
+  description = "CIDR block for the private subnet"
+  type        = string
+  default     = "10.0.2.0/24"
+  
+  validation {
+    condition     = can(cidrhost(var.private_subnet_cidr, 0))
+    error_message = "Private subnet CIDR must be a valid CIDR block."
+  }
+}
+
+variable "zone" {
+  description = "Availability zone for resource placement"
+  type        = string
+  default     = "KR-1"
 }
 
 # Server Configuration
@@ -35,19 +75,19 @@ variable "server_image_product_code" {
 variable "web_server_product_code" {
   description = "Product code for web server specifications"
   type        = string
-  default     = "SPSVRSTAND000004A"  # 2vCPU, 4GB RAM - suitable for web servers
+  default     = "SPSVRSTAND000004A"  # 2vCPU, 4GB RAM
 }
 
 variable "db_server_product_code" {
   description = "Product code for database server specifications"
   type        = string
-  default     = "SPSVRSTAND000005A"  # 4vCPU, 8GB RAM - better for databases
+  default     = "SPSVRSTAND000005A"  # 4vCPU, 8GB RAM
 }
 
-variable "zone" {
-  description = "Availability zone for server placement"
+variable "bastion_server_product_code" {
+  description = "Product code for bastion host specifications"
   type        = string
-  default     = "KR-1"
+  default     = "SPSVRSTAND000049A"  # 2vCPU, 2GB RAM (minimal for bastion)
 }
 
 # Multi-Server Configuration
@@ -73,9 +113,15 @@ variable "db_server_count" {
   }
 }
 
+variable "create_bastion" {
+  description = "Whether to create a bastion host for secure access"
+  type        = bool
+  default     = true
+}
+
 # Security Configuration
 variable "admin_access_cidr" {
-  description = "CIDR block for administrative access (RDP)"
+  description = "CIDR block for administrative access (RDP/SSH)"
   type        = string
   default     = "0.0.0.0/0"  # Change this to your office IP for better security
   
@@ -85,17 +131,11 @@ variable "admin_access_cidr" {
   }
 }
 
-variable "create_load_balancer" {
-  description = "Whether to create a load balancer public IP"
-  type        = bool
-  default     = false
-}
-
 # Authentication Configuration
 variable "key_name" {
   description = "Name for the login key (SSH key pair)"
   type        = string
-  default     = "multi-server-key"
+  default     = "vpc-infrastructure-key"
 }
 
 # Advanced Configuration
@@ -111,21 +151,28 @@ variable "enable_protection" {
   default     = false
 }
 
-# Server Product Reference:
-# Tested combinations for different workloads:
+# Network Architecture Reference:
 #
-# Web Servers (moderate CPU, adequate RAM):
-# - SPSVRSTAND000004A: 2vCPU, 4GB RAM, HDD
-# - SPSVRSTAND000005A: 4vCPU, 8GB RAM, HDD
+# VPC (10.0.0.0/16)
+# ├── Public Subnet (10.0.1.0/24)
+# │   ├── Internet Gateway
+# │   ├── NAT Gateway
+# │   ├── Web Servers (2vCPU, 4GB)
+# │   └── Bastion Host (2vCPU, 2GB)
+# └── Private Subnet (10.0.2.0/24)
+#     └── Database Servers (4vCPU, 8GB)
 #
-# Database Servers (higher specs for better performance):
-# - SPSVRSTAND000005A: 4vCPU, 8GB RAM, HDD
-# - SPSVRSTAND000006A: 8vCPU, 16GB RAM, HDD
+# Security Groups:
+# - Web SG: HTTP(80), HTTPS(443), RDP(3389) from admin/bastion
+# - DB SG: MySQL(3306), SQL Server(1433) from web SG, RDP from bastion
+# - Bastion SG: RDP(3389), SSH(22) from admin IPs only
 #
-# Small/Dev Environment:
-# - SPSVRSTAND000049A: 2vCPU, 2GB RAM, HDD (minimal cost)
+# Routing:
+# - Public Subnet: Direct internet access via Internet Gateway
+# - Private Subnet: Internet access via NAT Gateway in public subnet
 #
-# Security Group Notes:
-# - Web servers: Allow HTTP(80), HTTPS(443), RDP(3389) from admin IPs
-# - DB servers: Allow MySQL(3306) from web servers only, RDP from admin IPs
-# - Adjust admin_access_cidr to your specific IP range for better security
+# Server Product Options (tested):
+# - Bastion: SPSVRSTAND000049A (2vCPU, 2GB RAM) - minimal cost
+# - Web: SPSVRSTAND000004A (2vCPU, 4GB RAM) - adequate for web servers
+# - Database: SPSVRSTAND000005A (4vCPU, 8GB RAM) - better for databases
+# - High-performance: SPSVRSTAND000006A (8vCPU, 16GB RAM) - for heavy workloads
