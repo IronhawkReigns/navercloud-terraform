@@ -1,5 +1,5 @@
 # Terraform on NAVER Cloud: Multi-Server Provisioning with Security Group  
-(*네이버 클라우드 플랫폼에서 다중 서버와 보안 그룹을 구성하는 Terraform 예제*)
+*네이버 클라우드 플랫폼에서 다중 서버와 보안 그룹을 구성하는 Terraform 예제*
 
 This project provides a clean, minimal example of how to provision multiple virtual servers on NAVER Cloud Platform (NCP) using Terraform.
 
