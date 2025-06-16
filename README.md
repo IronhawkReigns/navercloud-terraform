@@ -133,5 +133,5 @@ This example can be easily extended to demonstrate more advanced Terraform patte
 
 This repository was created as part of an internship project at NAVER Cloud. It reflects practical experience building infrastructure with Terraform and demonstrates an understanding of real-world provisioning flows, security structure, and IaC best practices.
 
-> 이 저장소는 네이버 클라우드 인턴십의 일환으로 개발되었으며, 단순 코드 구성에 그치지 않고 실제 인프라 배포 흐름에 대한 이해와 경험을 반영하고자 했습니다.  
+> 이 저장소는 네이버 클라우드 파트타임의 일환으로 개발되었으며, 단순 코드 구성에 그치지 않고 실제 인프라 배포 흐름에 대한 이해와 경험을 반영하고자 했습니다.  
 > 실무에 가까운 실습 예제가 필요하신 한국 개발자 분들께도 도움이 되기를 바랍니다.
