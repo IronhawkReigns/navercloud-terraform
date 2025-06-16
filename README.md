@@ -75,7 +75,7 @@ Based on testing, here are the recommended configurations:
 | **Standard Small**<br/>**표준 소형** | `SPSVRSTAND000049A` | 2 | 2GB | 100GB HDD | 5-10 minutes<br/>5-10분 |
 | **Standard Medium**<br/>**표준 중형** | `SPSVRSTAND000004A` | 2 | 4GB | 100GB HDD | 5-15 minutes<br/>5-15분 |
 
-> **Tip | 팁**: Provisioning times can vary significantly depending on infrastructure load.  
+> **Tip**: Provisioning times can vary significantly depending on infrastructure load.  
 > 프로비저닝 시간은 인프라 부하에 따라 크게 달라질 수 있습니다.
 
 ### Availability Zones | 가용 영역
@@ -91,13 +91,13 @@ Based on testing, here are the recommended configurations:
 ```
 Error: "Please check your input value : [server-name]. Length constraints: Minimum length of 3. Maximum length of 15."
 ```
-**Solution | 해결책**: Ensure server name is 3-15 characters long.  
+**Solution**: Ensure server name is 3-15 characters long.  
 서버 이름이 3-15자인지 확인하세요.
 
 **2. Provisioning timeout (15+ minutes) | 프로비저닝 타임아웃 (15분 이상)**  
-**Common issue | 일반적인 문제**: Extended provisioning times occasionally occur  
+**Common issue**: Extended provisioning times occasionally occur  
 긴 프로비저닝 시간이 가끔 발생합니다  
-**Solution | 해결책**: 
+**Solution**: 
 - Stop the process with `Ctrl+C` | `Ctrl+C`로 프로세스 중지
 - Run `terraform destroy` to clean up | `terraform destroy`로 정리
 - Retry the deployment - success often varies between attempts | 재배포 시도 - 시도마다 성공률이 다름
@@ -107,9 +107,9 @@ Error: "Please check your input value : [server-name]. Length constraints: Minim
 ```
 Error: "Cannot find matched product code [PRODUCT_CODE] matching server image [IMAGE_CODE]"
 ```
-**Issue | 문제**: Not all server product codes are compatible with all image types  
+**Issue**: Not all server product codes are compatible with all image types  
 모든 서버 제품 코드가 모든 이미지 유형과 호환되는 것은 아닙니다  
-**Solution | 해결책**: Use the verified combinations provided in `terraform.tfvars.example`  
+**Solution**: Use the verified combinations provided in `terraform.tfvars.example`  
 `terraform.tfvars.example`에 제공된 검증된 조합을 사용하세요
 
 ### Key Observations | 주요 관찰사항
